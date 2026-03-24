@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Contrast Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      height: 100vh;
+      padding: 3vh 48px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-shrink: 0;
+    }
+
+    h1 {
+      font-size: clamp(28px, 5vh, 48px);
+      font-weight: 600;
+      margin-bottom: 0.5vh;
+      letter-spacing: -0.5px;
+    }
+
+    .theme-toggle {
+      background: none;
+      border: 1px solid #d4d4d4;
+      border-radius: 10px;
+      padding: 8px 16px;
+      min-height: 44px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      color: #525252;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      margin-top: 0.8vh;
+    }
+
+    @media (hover: hover) {
+      .theme-toggle:hover {
+        background: #e8e8e8;
+        border-color: #bbb;
+      }
+    }
+
+    .theme-toggle svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    body.dark {
+      background: #1a1a1a;
+      color: #f0f0f0;
+    }
+
+    body.dark .subtitle {
+      color: #a3a3a3;
+    }
+
+    body.dark .selection-indicator .step {
+      background: #333;
+      color: #999;
+    }
+
+    body.dark .selection-indicator .step.active {
+      background: #f0f0f0;
+      color: #1a1a1a;
+    }
+
+    body.dark .contrast-info {
+      background: #2a2a2a;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    body.dark .wcag-item {
+      background: #333;
+    }
+
+    body.dark .wcag-item .label {
+      color: #e0e0e0;
+    }
+
+    body.dark .wcag-item .sublabel {
+      color: #888;
+    }
+
+    body.dark .contrast-ratio-label {
+      color: #999;
+    }
+
+    body.dark .color-values {
+      border-top-color: #444;
+    }
+
+    body.dark .color-value-info .role {
+      color: #888;
+    }
+
+    body.dark .swap-btn {
+      border-color: #444;
+      background: #2a2a2a;
+      color: #999;
+    }
+
+    @media (hover: hover) {
+      body.dark .swap-btn:hover {
+        background: #333;
+        border-color: #555;
+        color: #f0f0f0;
+      }
+    }
+
+    body.dark .reset-btn {
+      border-color: #444;
+      background: #2a2a2a;
+      color: #ccc;
+    }
+
+    @media (hover: hover) {
+      body.dark .reset-btn:hover {
+        background: #333;
+        border-color: #555;
+      }
+    }
+
+    body.dark .theme-toggle {
+      border-color: #444;
+      color: #ccc;
+    }
+
+    @media (hover: hover) {
+      body.dark .theme-toggle:hover {
+        background: #333;
+        border-color: #555;
+      }
+    }
+
+    body.dark .copy-toast {
+      background: #f0f0f0;
+      color: #1a1a1a;
+    }
+
+    .layout {
+      display: flex;
+      gap: 40px;
+      align-items: stretch;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .palette-section {
+      flex: 2;
+      min-width: 0;
+      display: flex;
+      min-height: 0;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: #737373;
+      font-weight: 400;
+      margin-bottom: 4vh;
+      flex-shrink: 0;
+    }
+
+    .selection-indicator {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 1.5vh;
+      font-size: clamp(11px, 1.5vh, 14px);
+      font-weight: 400;
+      flex-shrink: 0;
+    }
+
+    .selection-indicator .step {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      background: #e8e8e8;
+      color: #888;
+      transition: all 0.2s ease;
+    }
+
+    .selection-indicator .step.active {
+      background: #1a1a1a;
+      color: #fff;
+    }
+
+    .selection-indicator .step.done {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .step .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      flex-shrink: 0;
+    }
+
+    .step.done .dot {
+      background: currentColor;
+    }
+
+    .palette-grid {
+      display: flex;
+      gap: 10px;
+      flex: 1;
+      min-height: 0;
+      max-height: 540px;
+    }
+
+    .palette-column {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .palette-column .swatch:first-child {
+      border-radius: 8px 8px 2px 2px;
+    }
+
+    .palette-column .swatch:last-child {
+      border-radius: 2px 2px 8px 8px;
+    }
+
+    .swatch {
+      width: 100%;
+      flex: 1;
+      border-radius: 2px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding-left: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    @media (hover: hover) {
+      .swatch:hover {
+        transform: scale(1.08);
+        z-index: 2;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      }
+    }
+
+    .swatch:active {
+      transform: scale(0.96);
+      transition-duration: 0.05s;
+    }
+
+    .swatch.disabled {
+      opacity: 0.2;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .swatch.disabled:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .swatch.selected-bg,
+    .palette-column .swatch.selected-bg:first-child,
+    .palette-column .swatch.selected-bg:last-child {
+      border-color: #1a1a1a;
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1a1a1a;
+      border-radius: 999px;
+      z-index: 3;
+    }
+
+    .swatch.selected-fg,
+    .palette-column .swatch.selected-fg:first-child,
+    .palette-column .swatch.selected-fg:last-child {
+      border-color: #1a1a1a;
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1a1a1a;
+      border-radius: 999px;
+      z-index: 3;
+    }
+
+    .swatch .close-icon {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.2);
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .swatch.selected-bg .close-icon,
+    .swatch.selected-fg .close-icon {
+      display: flex;
+    }
+
+    .swatch .close-icon svg {
+      width: 10px;
+      height: 10px;
+    }
+
+    .preview-section {
+      flex: 1;
+      min-width: 280px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .preview-card {
+      background: #E5E5E5;
+      border-radius: 16px;
+      padding: 4vh 40px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: background-color 0.3s ease;
+      min-height: 200px;
+      max-height: 420px;
+    }
+
+    .preview-icon {
+      margin-bottom: 4px;
+      transition: color 0.3s ease;
+      color: #A3A3A3;
+    }
+
+    .preview-icon svg {
+      width: clamp(36px, 6vh, 64px);
+      height: clamp(36px, 6vh, 64px);
+    }
+
+    .preview-text {
+      font-size: clamp(18px, 4vh, 32px);
+      font-weight: 600;
+      line-height: 1.25;
+      color: #A3A3A3;
+      transition: color 0.3s ease;
+    }
+
+    .contrast-info {
+      margin-top: 2vh;
+      background: #fff;
+      border-radius: 16px;
+      padding: 2vh 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      flex-shrink: 0;
+    }
+
+    .contrast-ratio-display {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 2vh;
+    }
+
+    .contrast-ratio-value {
+      font-size: clamp(28px, 5vh, 48px);
+      font-weight: 600;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .contrast-ratio-label {
+      font-size: clamp(12px, 1.8vh, 16px);
+      color: #737373;
+      font-weight: 400;
+    }
+
+    .wcag-results {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .wcag-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: #f9fafb;
+      font-size: 14px;
+    }
+
+    .wcag-item .label {
+      font-weight: 600;
+      color: #525252;
+      margin-bottom: 2px;
+    }
+
+    .wcag-item .sublabel {
+      font-size: 12px;
+      color: #a3a3a3;
+      font-weight: 400;
+    }
+
+    .wcag-badge {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 10px 4px 8px;
+      border-radius: 6px;
+    }
+
+    .wcag-badge.pass {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .wcag-badge.fail {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .graphical-objects-item {
+      grid-column: 1 / -1;
+    }
+
+    .color-values {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #f0f0f0;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .color-values.wrapped {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .color-values.wrapped .swap-btn {
+      align-self: center;
+    }
+
+    .color-values.wrapped .swap-btn svg {
+      transform: rotate(90deg);
+    }
+
+    .swap-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid #e5e5e5;
+      background: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+      color: #737373;
+    }
+
+    @media (hover: hover) {
+      .swap-btn:hover {
+        background: #f5f5f5;
+        border-color: #d4d4d4;
+        color: #1a1a1a;
+      }
+    }
+
+    .swap-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .color-value-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .color-value-swatch {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid rgba(0,0,0,0.1);
+      flex-shrink: 0;
+    }
+
+    .color-value-info {
+      font-size: 13px;
+    }
+
+    .color-value-info .hex {
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: inherit;
+      transition: color 0.15s ease;
+    }
+
+    .color-value-info .hex:hover {
+      color: rgba(0, 0, 0, 0.5);
+    }
+
+    body.dark .color-value-info .hex:hover {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .color-value-info .hex .copy-icon {
+      width: 14px;
+      height: 14px;
+      opacity: 0.4;
+      transition: opacity 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .color-value-info .hex:hover .copy-icon {
+      opacity: 0.7;
+    }
+
+    [data-tooltip] {
+      position: relative;
+    }
+
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a1a;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 400;
+      padding: 5px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    [data-tooltip]:hover::after {
+      opacity: 1;
+    }
+
+
+    body.dark [data-tooltip]::after {
+      background: #f0f0f0;
+      color: #1a1a1a;
+    }
+
+    .color-value-info .role {
+      color: #a3a3a3;
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+
+    .copy-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1a1a1a;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 400;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .copy-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .reset-btn {
+      margin-top: 24px;
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #e5e5e5;
+      background: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      color: #525252;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    @media (hover: hover) {
+      .reset-btn:hover {
+        background: #f5f5f5;
+        border-color: #d4d4d4;
+      }
+    }
+
+    @media (max-width: 900px) {
+      body {
+        height: auto;
+        overflow: auto;
+        padding: 24px 20px;
+      }
+
+      .layout {
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .palette-section {
+        flex: none;
+      }
+
+      .palette-grid {
+        max-height: none;
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+        padding: 6px;
+        margin: -6px;
+        scroll-snap-type: x proximity;
+      }
+
+      .palette-column {
+        min-width: 56px;
+        scroll-snap-align: start;
+      }
+
+      .swatch {
+        min-height: 44px;
+      }
+
+      .preview-section {
+        min-width: 0;
+      }
+
+      .preview-card {
+        flex: none;
+      }
+
+      .contrast-info {
+        padding: 28px;
+      }
+
+      .wcag-results {
+        gap: 8px;
+      }
+
+      .color-values {
+        margin-top: 16px;
+        padding-top: 16px;
+      }
+
+      .swap-btn {
+        width: 44px;
+        height: 44px;
+      }
+
+      .reset-btn {
+        margin-top: 24px;
+        min-height: 48px;
+      }
+
+      .theme-toggle {
+        min-height: 44px;
+        padding: 8px 16px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      html, body {
+        max-width: 100vw;
+        overflow-x: hidden;
+      }
+
+      body {
+        padding: 16px 14px;
+        padding-bottom: 32px;
+      }
+
+      .layout {
+        min-width: 0;
+        width: 100%;
+      }
+
+      .palette-section {
+        min-width: 0;
+        width: 100%;
+      }
+
+      .header {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      h1 {
+        font-size: 34px;
+        margin-bottom: 4px;
+      }
+
+      .subtitle {
+        font-size: 16px;
+        margin-bottom: 40px;
+      }
+
+      .theme-toggle {
+        margin-top: 2px;
+        padding: 0;
+        font-size: 0;
+        width: 44px;
+        height: 44px;
+        justify-content: center;
+        align-items: center;
+        gap: 0;
+      }
+
+      .theme-toggle svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .selection-indicator {
+        font-size: 12px;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .selection-indicator .step {
+        padding: 8px 12px;
+        border-radius: 20px;
+      }
+
+      .preview-card {
+        border-radius: 14px;
+      }
+
+      .contrast-info {
+        border-radius: 14px;
+        padding: 28px;
+      }
+
+      .wcag-results {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+
+      .graphical-objects-item {
+        grid-column: 1 / -1;
+      }
+
+      .color-values {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+      }
+
+      .color-value-item {
+        flex: none;
+      }
+
+      .swap-btn {
+        width: 44px;
+        height: 44px;
+        align-self: center;
+      }
+
+      .swap-btn svg {
+        transform: rotate(90deg);
+      }
+
+      .reset-btn {
+        margin-top: 24px;
+        min-height: 48px;
+        font-size: 15px;
+        border-radius: 12px;
+      }
+    }
+
+    .palette-tabbed {
+      display: none;
+    }
+
+    @media (max-width: 600px) {
+      .palette-grid {
+        display: none;
+      }
+
+      .palette-tabbed {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        flex: 1;
+        min-height: 0;
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .tab-bar-wrapper {
+        position: relative;
+        flex-shrink: 0;
+      }
+
+      .tab-bar-wrapper::before,
+      .tab-bar-wrapper::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 32px;
+        z-index: 2;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .tab-bar-wrapper::before {
+        left: 0;
+        background: linear-gradient(to right, #f5f5f5, transparent);
+      }
+
+      .tab-bar-wrapper::after {
+        right: 0;
+        background: linear-gradient(to left, #f5f5f5, transparent);
+      }
+
+      .tab-bar-wrapper.fade-left::before {
+        opacity: 1;
+      }
+
+      .tab-bar-wrapper.fade-right::after {
+        opacity: 1;
+      }
+
+      body.dark .tab-bar-wrapper::before {
+        background: linear-gradient(to right, #1a1a1a, transparent);
+      }
+
+      body.dark .tab-bar-wrapper::after {
+        background: linear-gradient(to left, #1a1a1a, transparent);
+      }
+
+      .tab-bar {
+        display: flex;
+        gap: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-shrink: 0;
+      }
+
+      .tab-bar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .tab-btn {
+        flex-shrink: 0;
+        padding: 10px 12px 12px 8px;
+        border: none;
+        border-radius: 0;
+        background: none;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        color: #737373;
+        cursor: pointer;
+        transition: color 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        position: relative;
+      }
+
+      .tab-btn::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        border-radius: 2px;
+        background: #e0e0e0;
+        transition: background 0.15s ease;
+      }
+
+      .tab-btn .tab-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .tab-btn.active {
+        color: #1a1a1a;
+        font-weight: 600;
+      }
+
+      .tab-btn.active::after {
+        background: #1a1a1a;
+      }
+
+      body.dark .tab-btn {
+        color: #999;
+      }
+
+      body.dark .tab-btn::after {
+        background: #444;
+      }
+
+      body.dark .tab-btn.active {
+        color: #f0f0f0;
+      }
+
+      body.dark .tab-btn.active::after {
+        background: #f0f0f0;
+      }
+
+      .tab-swatches {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        padding: 6px;
+      }
+
+      .tab-swatches .swatch {
+        min-height: 52px;
+        min-width: 0;
+        border-radius: 12px;
+        padding-left: 14px;
+        font-size: 13px;
+      }
+
+      .tab-swatches .swatch.selected-bg,
+      .tab-swatches .swatch.selected-fg {
+        border-radius: 12px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      h1 {
+        font-size: 24px;
+      }
+
+      .palette-column {
+        min-width: 42px;
+      }
+
+      .swatch {
+        min-height: 36px;
+        font-size: 9px;
+        padding-left: 4px;
+      }
+
+      .selection-indicator .step {
+        font-size: 11px;
+        padding: 6px 10px;
+      }
+
+      .preview-card {
+        padding: 3vh 20px;
+      }
+
+      .contrast-info {
+        padding: 20px;
+      }
+
+      .wcag-results {
+        grid-template-columns: 1fr;
+      }
+
+      .color-values {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+      }
+
+      .color-value-item {
+        flex: none;
+      }
+
+      .swap-btn {
+        width: 44px;
+        height: 44px;
+        align-self: center;
+      }
+
+      .swap-btn svg {
+        transform: rotate(90deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Color contrast tool</h1>
+      <p class="subtitle">Find color combos that are brand-approved and accessible.</p>
+    </div>
+    <button class="theme-toggle" id="themeToggle" data-tooltip="Toggle dark/light mode">
+      <svg viewBox="0 0 20 20" fill="currentColor">
+        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+      </svg>
+      Dark
+    </button>
+  </div>
+
+  <div class="selection-indicator">
+    <div class="step active" id="step-bg">
+      <span class="dot"></span>
+      Pick background
+    </div>
+    <div class="step" id="step-fg">
+      <span class="dot"></span>
+      Pick foreground
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="palette-section">
+      <div class="palette-grid" id="paletteGrid"></div>
+      <div class="palette-tabbed" id="paletteTabs">
+        <div class="tab-bar-wrapper" id="tabBarWrapper">
+          <div class="tab-bar" id="tabBar" role="tablist" aria-label="Color families"></div>
+        </div>
+        <div class="tab-swatches" id="tabSwatches" role="tabpanel"></div>
+      </div>
+    </div>
+
+    <div class="preview-section">
+      <div class="preview-card" id="previewCard">
+        <div class="preview-icon" id="previewIcon">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M33.75 13.9258C38.831 13.9258 42.9492 18.044 42.9492 23.125V42.375C42.9492 45.523 40.398 48.0742 37.25 48.0742H14.5C9.41898 48.0742 5.30078 43.956 5.30078 38.875V19.625C5.30078 16.477 7.85198 13.9258 11 13.9258H33.75ZM11 18.3242C10.282 18.3242 9.69922 18.907 9.69922 19.625V38.875C9.69922 41.526 11.849 43.6758 14.5 43.6758H37.25C37.968 43.6758 38.5508 43.093 38.5508 42.375V23.125C38.5508 20.474 36.401 18.3242 33.75 18.3242H11Z" fill="currentColor"/>
+            <path d="M55.2383 17.8242C55.9101 17.3543 56.7884 17.2975 57.5156 17.6758C58.2424 18.0548 58.6992 18.8051 58.6992 19.625V42.375L58.6797 42.6797C58.5822 43.3776 58.1513 43.9927 57.5156 44.3242C56.7884 44.7025 55.9101 44.6457 55.2383 44.1758L46.4883 38.0508C45.4942 37.3538 45.2533 35.9831 45.9492 34.9883C46.6462 33.9941 48.0169 33.7533 49.0117 34.4492L54.3008 38.1484V23.8477L49.0117 27.5508C48.0169 28.2467 46.6462 28.0059 45.9492 27.0117C45.2533 26.0169 45.4942 24.6462 46.4883 23.9492L55.2383 17.8242Z" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="preview-text" id="previewText">One platform delivering limitless human connection.</div>
+      </div>
+
+      <div class="contrast-info" id="contrastInfo">
+        <div class="contrast-ratio-display">
+          <span class="contrast-ratio-value" id="ratioValue">—</span>
+          <span class="contrast-ratio-label">contrast ratio</span>
+        </div>
+        <div class="wcag-results" id="wcagResults">
+          <div class="wcag-item">
+            <div>
+              <div class="label">AA Normal</div>
+              <div class="sublabel">≥ 4.5:1</div>
+            </div>
+            <span class="wcag-badge" id="aaNormal">—</span>
+          </div>
+          <div class="wcag-item">
+            <div>
+              <div class="label">AA Large</div>
+              <div class="sublabel">≥ 3:1</div>
+            </div>
+            <span class="wcag-badge" id="aaLarge">—</span>
+          </div>
+          <div class="wcag-item graphical-objects-item">
+            <div>
+              <div class="label">Graphical Objects</div>
+              <div class="sublabel">≥ 3:1</div>
+            </div>
+            <span class="wcag-badge" id="graphicalObjects">—</span>
+          </div>
+        </div>
+
+        <div class="color-values" id="colorValues">
+          <div class="color-value-item">
+            <div class="color-value-swatch" id="bgSwatch" style="background:#E5E5E5"></div>
+            <div class="color-value-info">
+              <div class="role">Background</div>
+              <div class="hex" id="bgHex" data-tooltip="Copy to clipboard" onclick="copyHex(this)">#E5E5E5<svg class="copy-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg></div>
+            </div>
+          </div>
+          <button class="swap-btn" id="swapBtn" data-tooltip="Swap colors">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 16l-4-4 4-4"/><path d="M3 12h18"/>
+              <path d="M17 8l4 4-4 4"/><path d="M21 12H3"/>
+            </svg>
+          </button>
+          <div class="color-value-item">
+            <div class="color-value-swatch" id="fgSwatch" style="background:#a3a3a3"></div>
+            <div class="color-value-info">
+              <div class="role">Foreground</div>
+              <div class="hex" id="fgHex" data-tooltip="Copy to clipboard" onclick="copyHex(this)">#A3A3A3<svg class="copy-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg></div>
+            </div>
+          </div>
+        </div>
+
+        <button class="reset-btn" id="resetBtn">Reset colors</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="copy-toast" id="copyToast"><svg class="toast-check" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M5 8.5L7 10.5L11 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="copyToastText">Copied!</span></div>
+
+  <script>
+    const PALETTE = {
+      'Bloom': {
+        T4: '#B4D0F8', T3: '#8AB3FA', T2: '#6096FC', T1: '#3579FD',
+        S1: '#094DDF', S2: '#073FBE', S3: '#06309E', S4: '#04227E', S5: '#02145D', S6: '#00053D'
+      },
+      'Noon': {
+        T4: '#FDFCF8', T3: '#FBF9F1', T2: '#F9F5EA', T1: '#F0E9D8',
+        S1: '#E9E0CC', S2: '#E2D7C1', S3: '#DACEB6', S4: '#D3C5AA', S5: '#CCBC9F', S6: '#CCBC9F'
+      },
+      'Agave': {
+        T4: '#98F2F4', T3: '#72EDF3', T2: '#4CE8F2', T1: '#26E3F0',
+        S1: '#01C3D3', S2: '#01A8B8', S3: '#028D9C', S4: '#037381', S5: '#035865', S6: '#043D4A'
+      },
+      'Spearmint': {
+        T4: '#ADF7DB', T3: '#82F5CC', T2: '#57F3BC', T1: '#2BF1AD',
+        S1: '#00D487', S2: '#01BA72', S3: '#019F5C', S4: '#018546', S5: '#026A31', S6: '#02501B'
+      },
+      'Lavender': {
+        T4: '#DECDFF', T3: '#CDB4FE', T2: '#BC9AFD', T1: '#AB81FC',
+        S1: '#8F56EA', S2: '#8445D8', S3: '#7934C7', S4: '#6D22B6', S5: '#6211A4', S6: '#570093'
+      },
+      'Gold': {
+        T4: '#FFEC9C', T3: '#FFE475', T2: '#FFDD4E', T1: '#FFD527',
+        S1: '#F5C203', S2: '#ECB705', S3: '#E2AC08', S4: '#D8A00B', S5: '#CF950D', S6: '#C58A10'
+      },
+      'Saffron': {
+        T4: '#FFD2A4', T3: '#FFBC7B', T2: '#FFA652', T1: '#FF8F29',
+        S1: '#EB6C01', S2: '#D75F02', S3: '#C45303', S4: '#B04605', S5: '#9C3906', S6: '#882C07'
+      },
+      'Rose': {
+        T4: '#FFC6DD', T3: '#FEA1C5', T2: '#FD7CAD', T1: '#FC5796',
+        S1: '#E22A70', S2: '#C92262', S3: '#B01954', S4: '#981146', S5: '#7F0938', S6: '#66012A'
+      }
+    };
+
+    const SHADE_ORDER = ['T4', 'T3', 'T2', 'T1', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
+
+    let selectionMode = 'bg';
+    let bgColor = null;
+    let fgColor = null;
+
+    const copyIconSVG = '<svg class="copy-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 012 9.5v-7A1.5 1.5 0 013.5 1h7A1.5 1.5 0 0112 2.5V5"/></svg>';
+
+    function setHexText(id, hex) {
+      const el = document.getElementById(id);
+      el.innerHTML = hex + copyIconSVG;
+    }
+
+    function copyHex(el) {
+      const hex = el.textContent.trim();
+      navigator.clipboard.writeText(hex);
+      const toast = document.getElementById('copyToast');
+      document.getElementById('copyToastText').textContent = `Copied ${hex}`;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1500);
+    }
+
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    }
+
+    function relativeLuminance(r, g, b) {
+      const [rs, gs, bs] = [r, g, b].map(c => {
+        c = c / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+    }
+
+    function contrastRatio(hex1, hex2) {
+      const c1 = hexToRgb(hex1);
+      const c2 = hexToRgb(hex2);
+      const l1 = relativeLuminance(c1.r, c1.g, c1.b);
+      const l2 = relativeLuminance(c2.r, c2.g, c2.b);
+      const lighter = Math.max(l1, l2);
+      const darker = Math.min(l1, l2);
+      return (lighter + 0.05) / (darker + 0.05);
+    }
+
+    function textColorForSwatch(hex) {
+      const whiteRatio = contrastRatio(hex, '#FFFFFF');
+      const blackRatio = contrastRatio(hex, '#000000');
+      return blackRatio >= whiteRatio ? '#000000' : '#FFFFFF';
+    }
+
+    function buildPalette() {
+      const grid = document.getElementById('paletteGrid');
+      for (const [family, shades] of Object.entries(PALETTE)) {
+        const col = document.createElement('div');
+        col.className = 'palette-column';
+        for (const shade of SHADE_ORDER) {
+          const hex = shades[shade];
+          const swatch = document.createElement('button');
+          swatch.className = 'swatch';
+          swatch.style.backgroundColor = hex;
+          swatch.style.color = textColorForSwatch(hex);
+          swatch.dataset.hex = hex;
+          swatch.dataset.family = family;
+
+          const label = document.createElement('span');
+          label.textContent = shade;
+          swatch.appendChild(label);
+
+          const closeIcon = document.createElement('span');
+          closeIcon.className = 'close-icon';
+          closeIcon.innerHTML = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2l6 6M8 2l-6 6"/></svg>';
+          closeIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleSwatchClick(swatch, hex);
+          });
+          swatch.appendChild(closeIcon);
+          swatch.dataset.shade = shade;
+          swatch.title = `${family} ${shade}: ${hex}`;
+          swatch.addEventListener('click', () => handleSwatchClick(swatch, hex));
+          swatch.addEventListener('mouseenter', () => handleSwatchHover(hex));
+          swatch.addEventListener('mouseleave', handleSwatchLeave);
+          col.appendChild(swatch);
+        }
+        grid.appendChild(col);
+      }
+    }
+
+    function handleSwatchHover(hex) {
+      const card = document.getElementById('previewCard');
+      const text = document.getElementById('previewText');
+      const icon = document.getElementById('previewIcon');
+
+      if (selectionMode === 'bg') {
+        card.style.backgroundColor = hex;
+      } else {
+        text.style.color = hex;
+        icon.style.color = hex;
+      }
+    }
+
+    function handleSwatchLeave() {
+      const card = document.getElementById('previewCard');
+      const text = document.getElementById('previewText');
+      const icon = document.getElementById('previewIcon');
+
+      card.style.backgroundColor = bgColor || '#E5E5E5';
+      text.style.color = fgColor || '#A3A3A3';
+      icon.style.color = fgColor || '#A3A3A3';
+    }
+
+    function clearContrastDisplay() {
+      document.getElementById('ratioValue').textContent = '—';
+      ['aaNormal', 'aaLarge', 'graphicalObjects'].forEach(id => {
+        const el = document.getElementById(id);
+        el.textContent = '—';
+        el.className = 'wcag-badge';
+      });
+    }
+
+    function updateDisabledSwatches() {
+      const allSwatches = document.querySelectorAll('.swatch');
+      if (!bgColor) {
+        allSwatches.forEach(s => s.classList.remove('disabled'));
+        return;
+      }
+      allSwatches.forEach(s => {
+        if (s.classList.contains('selected-bg')) return;
+        const ratio = contrastRatio(bgColor, s.dataset.hex);
+        if (ratio < 4.5) {
+          s.classList.add('disabled');
+        } else {
+          s.classList.remove('disabled');
+        }
+      });
+    }
+
+    function handleSwatchClick(swatch, hex) {
+      if (swatch.classList.contains('selected-bg')) {
+        swatch.classList.remove('selected-bg');
+        bgColor = null;
+        document.getElementById('previewCard').style.backgroundColor = '#E5E5E5';
+        document.getElementById('bgSwatch').style.backgroundColor = '#E5E5E5';
+        setHexText('bgHex', '#E5E5E5');
+        selectionMode = 'bg';
+        document.getElementById('step-bg').classList.add('active');
+        document.getElementById('step-bg').classList.remove('done');
+        document.getElementById('step-fg').classList.remove('active');
+        if (fgColor) document.getElementById('step-fg').classList.add('done');
+        clearContrastDisplay();
+        updateDisabledSwatches();
+        return;
+      }
+
+      if (swatch.classList.contains('selected-fg')) {
+        swatch.classList.remove('selected-fg');
+        fgColor = null;
+        document.getElementById('previewText').style.color = '#a3a3a3';
+        document.getElementById('previewIcon').style.color = '#a3a3a3';
+        document.getElementById('fgSwatch').style.backgroundColor = '#a3a3a3';
+        setHexText('fgHex', '#A3A3A3');
+        selectionMode = 'fg';
+        document.getElementById('step-fg').classList.add('active');
+        document.getElementById('step-fg').classList.remove('done');
+        clearContrastDisplay();
+        return;
+      }
+
+      if (selectionMode === 'bg') {
+        document.querySelectorAll('.swatch.selected-bg').forEach(s => s.classList.remove('selected-bg'));
+        swatch.classList.add('selected-bg');
+        bgColor = hex;
+        document.getElementById('previewCard').style.backgroundColor = hex;
+        document.getElementById('bgSwatch').style.backgroundColor = hex;
+        setHexText('bgHex', hex.toUpperCase());
+
+        selectionMode = 'fg';
+        document.getElementById('step-bg').classList.remove('active');
+        document.getElementById('step-bg').classList.add('done');
+        document.getElementById('step-fg').classList.add('active');
+        updateDisabledSwatches();
+      } else {
+        document.querySelectorAll('.swatch.selected-fg').forEach(s => s.classList.remove('selected-fg'));
+        swatch.classList.add('selected-fg');
+        fgColor = hex;
+        document.getElementById('previewText').style.color = hex;
+        document.getElementById('previewIcon').style.color = hex;
+        document.getElementById('fgSwatch').style.backgroundColor = hex;
+        setHexText('fgHex', hex.toUpperCase());
+
+        document.getElementById('step-fg').classList.remove('active');
+        document.getElementById('step-fg').classList.add('done');
+      }
+
+      if (bgColor && fgColor) {
+        updateContrast();
+      }
+    }
+
+    function updateContrast() {
+      const ratio = contrastRatio(bgColor, fgColor);
+      const formatted = ratio.toFixed(2);
+      document.getElementById('ratioValue').textContent = `${formatted}:1`;
+
+      const aaNormal = ratio >= 4.5;
+      const aaLarge = ratio >= 3;
+      const graphical = ratio >= 3;
+
+      setBadge('aaNormal', aaNormal);
+      setBadge('aaLarge', aaLarge);
+      setBadge('graphicalObjects', graphical);
+    }
+
+    function setBadge(id, passes) {
+      const el = document.getElementById(id);
+      el.textContent = passes ? '✓ Pass' : '✕ Fail';
+      el.className = 'wcag-badge ' + (passes ? 'pass' : 'fail');
+    }
+
+    function resetSelection() {
+      bgColor = null;
+      fgColor = null;
+      selectionMode = 'bg';
+
+      document.querySelectorAll('.swatch').forEach(s => {
+        s.classList.remove('selected-bg', 'selected-fg', 'disabled');
+      });
+
+      document.getElementById('previewCard').style.backgroundColor = '#E5E5E5';
+      document.getElementById('previewText').style.color = '#A3A3A3';
+      document.getElementById('previewIcon').style.color = '#A3A3A3';
+      document.getElementById('bgSwatch').style.backgroundColor = '#E5E5E5';
+      document.getElementById('fgSwatch').style.backgroundColor = '#A3A3A3';
+      setHexText('bgHex', '#E5E5E5');
+      setHexText('fgHex', '#A3A3A3');
+      document.getElementById('ratioValue').textContent = '—';
+
+      ['aaNormal', 'aaLarge', 'graphicalObjects'].forEach(id => {
+        const el = document.getElementById(id);
+        el.textContent = '—';
+        el.className = 'wcag-badge';
+      });
+
+      document.getElementById('step-bg').classList.add('active');
+      document.getElementById('step-bg').classList.remove('done');
+      document.getElementById('step-fg').classList.remove('active', 'done');
+    }
+
+    function swapColors() {
+      if (!bgColor || !fgColor) return;
+
+      const temp = bgColor;
+      bgColor = fgColor;
+      fgColor = temp;
+
+      document.getElementById('previewCard').style.backgroundColor = bgColor;
+      document.getElementById('previewText').style.color = fgColor;
+      document.getElementById('previewIcon').style.color = fgColor;
+      document.getElementById('bgSwatch').style.backgroundColor = bgColor;
+      document.getElementById('fgSwatch').style.backgroundColor = fgColor;
+      setHexText('bgHex', bgColor.toUpperCase());
+      setHexText('fgHex', fgColor.toUpperCase());
+
+      document.querySelectorAll('.swatch.selected-bg, .swatch.selected-fg').forEach(s => {
+        if (s.classList.contains('selected-bg')) {
+          s.classList.remove('selected-bg');
+          s.classList.add('selected-fg');
+        } else if (s.classList.contains('selected-fg')) {
+          s.classList.remove('selected-fg');
+          s.classList.add('selected-bg');
+        }
+      });
+
+      updateContrast();
+      updateDisabledSwatches();
+    }
+
+    document.getElementById('swapBtn').addEventListener('click', swapColors);
+    document.getElementById('resetBtn').addEventListener('click', resetSelection);
+
+    const sunIcon = '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>';
+    const moonIcon = '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>';
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      const isDark = document.body.classList.contains('dark');
+      const btn = document.getElementById('themeToggle');
+      btn.innerHTML = (isDark ? sunIcon : moonIcon) + (isDark ? ' Light' : ' Dark');
+    });
+
+    let activeTab = Object.keys(PALETTE)[0];
+
+    function buildTabbedPalette() {
+      const tabBar = document.getElementById('tabBar');
+      const families = Object.keys(PALETTE);
+
+      families.forEach((family, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
+        btn.dataset.family = family;
+        btn.setAttribute('role', 'tab');
+        btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+        btn.setAttribute('aria-controls', 'tabSwatches');
+
+        const dot = document.createElement('span');
+        dot.className = 'tab-dot';
+        dot.setAttribute('aria-hidden', 'true');
+        dot.style.backgroundColor = PALETTE[family]['S1'];
+        btn.appendChild(dot);
+
+        const label = document.createTextNode(family);
+        btn.appendChild(label);
+
+        btn.addEventListener('click', () => switchTab(family));
+        tabBar.appendChild(btn);
+      });
+
+      initTabBarFades();
+      renderTabSwatches(activeTab);
+    }
+
+    function switchTab(family) {
+      activeTab = family;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        const isActive = btn.dataset.family === family;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+      renderTabSwatches(family);
+    }
+
+    function initTabBarFades() {
+      const wrapper = document.getElementById('tabBarWrapper');
+      const bar = document.getElementById('tabBar');
+      function updateFades() {
+        const scrollLeft = bar.scrollLeft;
+        const maxScroll = bar.scrollWidth - bar.clientWidth;
+        wrapper.classList.toggle('fade-left', scrollLeft > 4);
+        wrapper.classList.toggle('fade-right', scrollLeft < maxScroll - 4);
+      }
+      bar.addEventListener('scroll', updateFades, { passive: true });
+      window.addEventListener('resize', updateFades);
+      setTimeout(updateFades, 50);
+    }
+
+    document.getElementById('tabBar').addEventListener('keydown', (e) => {
+      const tabs = Array.from(document.querySelectorAll('.tab-btn'));
+      const current = tabs.findIndex(t => t.classList.contains('active'));
+      let next = -1;
+      if (e.key === 'ArrowRight') next = (current + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') next = (current - 1 + tabs.length) % tabs.length;
+      if (next >= 0) {
+        e.preventDefault();
+        tabs[next].focus();
+        tabs[next].click();
+      }
+    });
+
+    function renderTabSwatches(family) {
+      const container = document.getElementById('tabSwatches');
+      container.innerHTML = '';
+      const shades = PALETTE[family];
+
+      SHADE_ORDER.forEach(shade => {
+        const hex = shades[shade];
+        const swatch = document.createElement('button');
+        swatch.className = 'swatch';
+        swatch.style.backgroundColor = hex;
+        swatch.style.color = textColorForSwatch(hex);
+        swatch.dataset.hex = hex;
+        swatch.dataset.family = family;
+        swatch.dataset.shade = shade;
+        swatch.title = `${family} ${shade}: ${hex}`;
+
+        if (bgColor === hex) swatch.classList.add('selected-bg');
+        if (fgColor === hex) swatch.classList.add('selected-fg');
+
+        if (bgColor && !swatch.classList.contains('selected-bg')) {
+          const ratio = contrastRatio(bgColor, hex);
+          if (ratio < 4.5) swatch.classList.add('disabled');
+        }
+
+        const label = document.createElement('span');
+        label.textContent = `${shade}  ${hex}`;
+        swatch.appendChild(label);
+
+        const closeIcon = document.createElement('span');
+        closeIcon.className = 'close-icon';
+        closeIcon.innerHTML = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2l6 6M8 2l-6 6"/></svg>';
+        closeIcon.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleSwatchClick(swatch, hex);
+          renderTabSwatches(activeTab);
+        });
+        swatch.appendChild(closeIcon);
+
+        swatch.addEventListener('click', () => {
+          handleSwatchClick(swatch, hex);
+          renderTabSwatches(activeTab);
+        });
+        swatch.addEventListener('mouseenter', () => handleSwatchHover(hex));
+        swatch.addEventListener('mouseleave', handleSwatchLeave);
+
+        container.appendChild(swatch);
+      });
+    }
+
+    const origUpdateDisabled = updateDisabledSwatches;
+    updateDisabledSwatches = function() {
+      origUpdateDisabled();
+      if (window.innerWidth <= 600) renderTabSwatches(activeTab);
+    };
+
+    const origReset = resetSelection;
+    resetSelection = function() {
+      origReset();
+      if (window.innerWidth <= 600) renderTabSwatches(activeTab);
+    };
+
+    buildPalette();
+    buildTabbedPalette();
+
+    function checkColorValuesWrap() {
+      const cv = document.getElementById('colorValues');
+      if (!cv) return;
+      cv.classList.remove('wrapped');
+      const children = Array.from(cv.children);
+      if (children.length < 2) return;
+      const firstTop = children[0].getBoundingClientRect().top;
+      const lastTop = children[children.length - 1].getBoundingClientRect().top;
+      if (lastTop > firstTop) cv.classList.add('wrapped');
+    }
+    window.addEventListener('resize', checkColorValuesWrap);
+    new ResizeObserver(checkColorValuesWrap).observe(document.getElementById('colorValues'));
+    checkColorValuesWrap();
+  </script>
+</body>
+</html>
