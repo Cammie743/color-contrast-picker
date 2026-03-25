@@ -1345,9 +1345,15 @@
         document.getElementById('previewIcon').style.color = '#a3a3a3';
         document.getElementById('fgSwatch').style.backgroundColor = '#a3a3a3';
         setHexText('fgHex', '#A3A3A3');
-        selectionMode = 'fg';
-        document.getElementById('step-fg').classList.add('active');
         document.getElementById('step-fg').classList.remove('done');
+        if (bgColor) {
+          selectionMode = 'fg';
+          document.getElementById('step-fg').classList.add('active');
+        } else {
+          selectionMode = 'bg';
+          document.getElementById('step-bg').classList.add('active');
+          document.getElementById('step-fg').classList.remove('active');
+        }
         clearContrastDisplay();
         return;
       }
